@@ -315,7 +315,7 @@ def create_financial_inputs(generator_type: str) -> Dict:
             )
             debt_term = st.number_input(
                 "Debt Term (years)",
-                value=_safe_int(query_params.get("debt_term", DEFAULTS_FINANCIAL['debt_term_years'])),
+                value=_safe_int(query_params.get("debt_term", DEFAULTS_FINANCIAL['debt_term_years']), DEFAULTS_FINANCIAL['debt_term_years']),
                 min_value=1,
                 key="debt_term",
                 on_change=update_param,
