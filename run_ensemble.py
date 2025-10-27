@@ -21,10 +21,24 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Suppress tornado websocket errors
+logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
+logging.getLogger("tornado.general").setLevel(logging.CRITICAL)
+
 MAX_CONCURRENT = 10
 
 def run_lcoe_calculation(case: Dict[str, Any]) -> Dict[str, Any]:
     """Run the calculation synchronously."""
+    # Validate inputs first
+    if case.get('datacenter_load_mw', 0) <= 0:
+        return {
+            **case,
+            'system_spec': None,
+            'lcoe': None,
+            'renewable_percentage': None,
+            'status': 'error: invalid datacenter_load_mw'
+        }
+    
     try:
         # Get solar generation data
         solar_ac_dataframe = get_solar_ac_dataframe(case['lat'], case['long'])
@@ -65,6 +79,22 @@ def run_lcoe_calculation(case: Dict[str, Any]) -> Dict[str, Any]:
             'status': 'success'
         }
         
+    except ValueError as e:
+        # Handle specific errors like zero energy
+        error_msg = str(e).lower()
+        if "zero" in error_msg and ("energy" in error_msg or "lifetime" in error_msg):
+            status = "error: zero energy"
+            logger.warning(f"Zero energy case: {case}")
+        else:
+            status = f"error: {e}"
+            logger.error(f"ValueError in calculation: {str(e)}")
+        return {
+            **case,
+            'system_spec': None,
+            'lcoe': None,
+            'renewable_percentage': None,
+            'status': status
+        }
     except Exception as e:
         logger.error(f"Error in calculation: {str(e)}")
         return {

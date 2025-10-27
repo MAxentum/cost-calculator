@@ -6,6 +6,8 @@ import plotly.graph_objects as go
 from typing import Dict, Optional
 import polars as pl
 
+from app_components.utils import sanitize_dataframe_for_streamlit
+
 # Global color constants
 SOLAR_COLOR = '#ffd700'  # yellow
 BESS_COLOR = '#ff7f0e'   # orange
@@ -413,8 +415,8 @@ def display_proforma(proforma: Optional[pd.DataFrame]) -> None:
         st.error("No matching simulation data found for the selected inputs.")
         return
     
-    # Create DataFrame
-    display_df = proforma
+    # Sanitize DataFrame for Arrow serialization
+    display_df = sanitize_dataframe_for_streamlit(proforma)
     
     # Create a style function for negative numbers
     def style_negative(val):

@@ -7,6 +7,7 @@ from streamlit_folium import st_folium
 import folium
 
 from app_components.st_outputs import create_capacity_chart
+from app_components.utils import sanitize_dataframe_for_streamlit
 from core.defaults import (
     BESS_HRS_STORAGE, DEFAULTS_GENERATORS, DEFAULTS_SOLAR_CAPEX, DEFAULTS_BESS_CAPEX,
     DEFAULTS_SYSTEM_INTEGRATION_CAPEX, DEFAULTS_SOFT_COSTS_CAPEX, DEFAULTS_OM, DEFAULTS_FINANCIAL,
@@ -333,9 +334,12 @@ def create_financial_inputs(generator_type: str) -> Dict:
                     'Depreciation (%)': DEFAULTS_DEPRECIATION_SCHEDULE
                 })
             
+            # Sanitize the DataFrame before displaying
+            sanitized_schedule = sanitize_dataframe_for_streamlit(st.session_state.depreciation_schedule)
+            
             # Display editable depreciation schedule
             edited_depreciation = st.data_editor(
-                st.session_state.depreciation_schedule,
+                sanitized_schedule,
                 column_config={
                     "Year": st.column_config.NumberColumn(
                         "Year",
