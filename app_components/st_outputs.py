@@ -392,7 +392,8 @@ def format_proforma(proforma: pd.DataFrame) -> pd.DataFrame:
                     else:
                         npv_value = float(npv_value)
                 except (ValueError, TypeError):
-                    npv_value = None  # Use None for values that can't be converted
+                    # Handle edge cases: non-numeric data, NaN strings, or other invalid values
+                    npv_value = None  # Will become NaN in the final numeric column
                 
                 year_values = {}
                 for year in proforma.index:
@@ -404,7 +405,8 @@ def format_proforma(proforma: pd.DataFrame) -> pd.DataFrame:
                             else:
                                 val = float(val)
                         except (ValueError, TypeError):
-                            val = None  # Use None for values that can't be converted
+                            # Handle edge cases: non-numeric data, NaN strings, or other invalid values
+                            val = None  # Will become NaN in the final numeric column
                         year_values[str(year)] = val
 
                 rows.append({
