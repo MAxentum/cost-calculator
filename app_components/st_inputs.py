@@ -154,13 +154,20 @@ def create_system_inputs() -> Dict:
     def update_param(key: str):
         st.query_params[key] = st.session_state[key]
     
+    # Helper to safely parse floats from query params
+    def _safe_float(val, default: float) -> float:
+        try:
+            return float(val)
+        except (TypeError, ValueError):
+            return float(default)
+    
     with col1:
         datacenter_load = st.number_input(
             "Data Center Demand (MW)",
-            value=int(query_params.get("dc_load", 100)),
-            min_value=0,
-            max_value=1002,
-            step=50,
+            value=_safe_float(query_params.get("dc_load", 100), 100.0),
+            min_value=0.0,
+            max_value=1002.0,
+            step=50.0,
             key="dc_load",
             on_change=update_param,
             args=("dc_load",)
@@ -169,10 +176,10 @@ def create_system_inputs() -> Dict:
     with col2:
         solar_pv_capacity = st.number_input(
             "Solar PV Capacity (MW DC)",
-            value=int(query_params.get("solar", 250)),
-            min_value=0,
-            max_value=5000,
-            step=50,
+            value=_safe_float(query_params.get("solar", 250), 250.0),
+            min_value=0.0,
+            max_value=5000.0,
+            step=50.0,
             key="solar",
             on_change=update_param,
             args=("solar",)
@@ -181,10 +188,10 @@ def create_system_inputs() -> Dict:
     with col3:
         bess_max_power = st.number_input(
             "BESS Power (MW), 4hr store",
-            value=int(query_params.get("bess", 150)),
-            min_value=0,
-            max_value=3000,
-            step=50,
+            value=_safe_float(query_params.get("bess", 150), 150.0),
+            min_value=0.0,
+            max_value=3000.0,
+            step=50.0,
             key="bess",
             on_change=update_param,
             args=("bess",)
@@ -193,10 +200,10 @@ def create_system_inputs() -> Dict:
     with col4:
         generator_capacity = st.number_input(
             "Generator Capacity (MW)",
-            value=int(query_params.get("gen", 100)),
-            min_value=0,
-            max_value=1000,
-            step=10,
+            value=_safe_float(query_params.get("gen", 100), 100.0),
+            min_value=0.0,
+            max_value=1000.0,
+            step=10.0,
             key="gen",
             on_change=update_param,
             args=("gen",)
