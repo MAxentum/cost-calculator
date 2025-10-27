@@ -65,8 +65,8 @@ def st_conditional_cache(func):
 def get_solar_ac_dataframe(
     latitude: float,
     longitude: float,
-    system_type: str = "single-axis",
-    surface_tilt: float = 20,
+    system_type: str = "fixed-tilt",
+    surface_tilt: float = 0,
     surface_azimuth: float = 180,
 ) -> pd.DataFrame:
     """
