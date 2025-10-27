@@ -16,7 +16,7 @@ from core.defaults import (
     DEFAULTS_SOFT_COSTS_CAPEX, DEFAULTS_OM, DEFAULTS_FINANCIAL, DEFAULTS_GENERATORS,
     DEFAULTS_DEPRECIATION_SCHEDULE
 )
-from app_components.utils import sanitize_dataframe_for_streamlit
+from app_components.utils import sanitize_dataframe_for_streamlit, validate_case_inputs
 
 # Configure logging to suppress websocket errors
 logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
@@ -157,23 +157,10 @@ cases = [
     for s, b, g in itertools.product(solar_vals, bess_vals, gen_vals)
 ]
 
-# ---------- validate individual cases ----------
-def validate_case(case: dict) -> str:
-    """Validate a single case. Returns error message or empty string if valid."""
-    if case["datacenter_load_mw"] <= 0:
-        return "invalid: datacenter_load_mw <= 0"
-    if case["solar_pv_capacity_mw"] < 0:
-        return "invalid: solar_pv_capacity_mw < 0"
-    if case["bess_max_power_mw"] < 0:
-        return "invalid: bess_max_power_mw < 0"
-    if case["generator_capacity_mw"] < 0:
-        return "invalid: generator_capacity_mw < 0"
-    return ""
-
 # ---------- per-case compute ----------
 def run_case(case: dict) -> dict:
-    # First validate the case
-    validation_error = validate_case(case)
+    # First validate the case using shared utility
+    validation_error = validate_case_inputs(case)
     if validation_error:
         return {**case, "system_spec": None, "lcoe": None, "renewable_percentage": None, "status": f"error: {validation_error}"}
     

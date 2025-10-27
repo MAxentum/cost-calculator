@@ -13,6 +13,7 @@ import logging
 from core.datacenter import DataCenter
 from core.powerflow_model import simulate_system, get_solar_ac_dataframe, calculate_energy_mix
 from core.pareto_frontier import process_ensemble_data
+from app_components.utils import validate_case_inputs
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,14 +30,15 @@ MAX_CONCURRENT = 10
 
 def run_lcoe_calculation(case: Dict[str, Any]) -> Dict[str, Any]:
     """Run the calculation synchronously."""
-    # Validate inputs first
-    if case.get('datacenter_load_mw', 0) <= 0:
+    # Validate inputs first using shared utility
+    validation_error = validate_case_inputs(case)
+    if validation_error:
         return {
             **case,
             'system_spec': None,
             'lcoe': None,
             'renewable_percentage': None,
-            'status': 'error: invalid datacenter_load_mw'
+            'status': f'error: {validation_error}'
         }
     
     try:

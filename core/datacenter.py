@@ -289,9 +289,8 @@ class DataCenter:
             ValueError: If lifetime energy is zero or negative (system cannot serve load)
         """
         # Check for zero lifetime energy before attempting LCOE calculation
-        # Calculate a test proforma to check total energy
-        test_proforma = self.calculate_pro_forma(100)  # Use arbitrary LCOE for test
-        total_load_served = test_proforma.loc['NPV', 'Load Served (MWh)']
+        # Calculate total from filtered simulation data directly (more efficient than full proforma)
+        total_load_served = self.filtered_simulation_data['Load Served (MWh)'].sum()
         
         if total_load_served is None or pd.isna(total_load_served) or total_load_served <= 0:
             raise ValueError(f"Zero or negative lifetime energy: {total_load_served} MWh. Cannot calculate LCOE.")

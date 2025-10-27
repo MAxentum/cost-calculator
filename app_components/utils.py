@@ -2,7 +2,27 @@
 
 import pandas as pd
 import numpy as np
-from typing import Any
+from typing import Any, Dict
+
+
+def validate_case_inputs(case: Dict[str, Any]) -> str:
+    """Validate inputs for a single case.
+    
+    Args:
+        case: Dictionary with datacenter configuration
+        
+    Returns:
+        Empty string if valid, error message if invalid
+    """
+    if case.get("datacenter_load_mw", 0) <= 0:
+        return "invalid: datacenter_load_mw <= 0"
+    if case.get("solar_pv_capacity_mw", 0) < 0:
+        return "invalid: solar_pv_capacity_mw < 0"
+    if case.get("bess_max_power_mw", 0) < 0:
+        return "invalid: bess_max_power_mw < 0"
+    if case.get("generator_capacity_mw", 0) < 0:
+        return "invalid: generator_capacity_mw < 0"
+    return ""
 
 
 def sanitize_dataframe_for_streamlit(df: pd.DataFrame) -> pd.DataFrame:
@@ -28,20 +48,19 @@ def sanitize_dataframe_for_streamlit(df: pd.DataFrame) -> pd.DataFrame:
     
     for col in df_clean.columns:
         try:
-            # Skip if already a clean numeric type
+            # Skip if already a clean numeric type (no conversion needed)
             if pd.api.types.is_numeric_dtype(df_clean[col]):
-                # Convert numpy types to Python types for Arrow compatibility
-                if df_clean[col].dtype == np.float64:
-                    df_clean[col] = df_clean[col].astype('float64')
-                elif df_clean[col].dtype == np.int64:
-                    df_clean[col] = df_clean[col].astype('int64')
                 continue
             
             # Try to decode bytes to string
             if df_clean[col].dtype == object:
+                # Check if column is empty
+                if len(df_clean[col]) == 0:
+                    continue
+                
                 # Check if any values are bytes
                 sample = df_clean[col].dropna().head(10)
-                if any(isinstance(val, bytes) for val in sample):
+                if len(sample) > 0 and any(isinstance(val, bytes) for val in sample):
                     df_clean[col] = df_clean[col].apply(
                         lambda x: x.decode('utf-8') if isinstance(x, bytes) else x
                     )
@@ -52,7 +71,7 @@ def sanitize_dataframe_for_streamlit(df: pd.DataFrame) -> pd.DataFrame:
                 # If at least some values converted successfully, use the numeric version
                 if numeric_converted.notna().sum() > 0:
                     # Only convert if most values are numeric (>50%)
-                    if numeric_converted.notna().sum() / len(df_clean[col]) > 0.5:
+                    if len(df_clean[col]) > 0 and numeric_converted.notna().sum() / len(df_clean[col]) > 0.5:
                         df_clean[col] = numeric_converted
                     else:
                         # Mixed types - convert all to string for consistency
