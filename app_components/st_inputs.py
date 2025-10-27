@@ -275,6 +275,22 @@ def create_financial_inputs(generator_type: str) -> Dict:
     def update_param(key: str):
         st.query_params[key] = st.session_state[key]
     
+    # Helpers to safely parse numbers from query params
+    def _safe_float(val, default: float) -> float:
+        try:
+            return float(val)
+        except (TypeError, ValueError):
+            return float(default)
+    
+    def _safe_int(val, default: int) -> int:
+        try:
+            return int(val)
+        except (TypeError, ValueError):
+            try:
+                return int(float(val))
+            except (TypeError, ValueError):
+                return int(default)
+    
     # Financial Inputs
     with st.expander("Capital Structure"):
         col1, col2 = st.columns(2)
@@ -299,7 +315,7 @@ def create_financial_inputs(generator_type: str) -> Dict:
             )
             debt_term = st.number_input(
                 "Debt Term (years)",
-                value=int(query_params.get("debt_term", DEFAULTS_FINANCIAL['debt_term_years'])),
+                value=_safe_int(query_params.get("debt_term", DEFAULTS_FINANCIAL['debt_term_years'])),
                 min_value=1,
                 key="debt_term",
                 on_change=update_param,
@@ -426,16 +442,16 @@ def create_financial_inputs(generator_type: str) -> Dict:
         with col1:
             bess_units = st.number_input(
                 "BESS Units ($/kWh)",
-                value=int(query_params.get("bess_units", DEFAULTS_BESS_CAPEX['units'])),
-                format="%d",
+                value=_safe_float(query_params.get("bess_units", DEFAULTS_BESS_CAPEX['units']), DEFAULTS_BESS_CAPEX['units']),
+                format="%.2f",
                 key="bess_units",
                 on_change=update_param,
                 args=("bess_units",)
             )
             bess_balance_of_system = st.number_input(
                 "Balance of System ($/kWh)",
-                value=int(query_params.get("bess_bos", DEFAULTS_BESS_CAPEX['balance_of_system'])),
-                format="%d",
+                value=_safe_float(query_params.get("bess_bos", DEFAULTS_BESS_CAPEX['balance_of_system']), DEFAULTS_BESS_CAPEX['balance_of_system']),
+                format="%.2f",
                 key="bess_bos",
                 on_change=update_param,
                 args=("bess_bos",)
@@ -443,8 +459,8 @@ def create_financial_inputs(generator_type: str) -> Dict:
         with col2:
             bess_labor = st.number_input(
                 "Labor ($/kWh)",
-                value=int(query_params.get("bess_labor", DEFAULTS_BESS_CAPEX['labor'])),
-                format="%d",
+                value=_safe_float(query_params.get("bess_labor", DEFAULTS_BESS_CAPEX['labor']), DEFAULTS_BESS_CAPEX['labor']),
+                format="%.2f",
                 key="bess_labor",
                 on_change=update_param,
                 args=("bess_labor",)
@@ -457,16 +473,16 @@ def create_financial_inputs(generator_type: str) -> Dict:
         with col1:
             gensets = st.number_input(
                 "Gensets ($/kW)", 
-                value=int(query_params.get("gensets", gen_config['capex']['gensets'])),
-                format="%d",
+                value=_safe_float(query_params.get("gensets", gen_config['capex']['gensets']), gen_config['capex']['gensets']),
+                format="%.2f",
                 key="gensets",
                 on_change=update_param,
                 args=("gensets",)
             )
             gen_balance_of_system = st.number_input(
                 "Balance of System ($/kW)", 
-                value=int(query_params.get("gen_bos", gen_config['capex']['balance_of_system'])),
-                format="%d",
+                value=_safe_float(query_params.get("gen_bos", gen_config['capex']['balance_of_system']), gen_config['capex']['balance_of_system']),
+                format="%.2f",
                 key="gen_bos",
                 on_change=update_param,
                 args=("gen_bos",)
@@ -474,8 +490,8 @@ def create_financial_inputs(generator_type: str) -> Dict:
         with col2:
             gen_labor = st.number_input(
                 "Labor ($/kW)", 
-                value=int(query_params.get("gen_labor", gen_config['capex']['labor'])),
-                format="%d",
+                value=_safe_float(query_params.get("gen_labor", gen_config['capex']['labor']), gen_config['capex']['labor']),
+                format="%.2f",
                 key="gen_labor",
                 on_change=update_param,
                 args=("gen_labor",)
@@ -487,16 +503,16 @@ def create_financial_inputs(generator_type: str) -> Dict:
         with col1:
             si_microgrid = st.number_input(
                 "Microgrid Switchgear, Transformers, etc. ($/kW)",
-                value=int(query_params.get("si_microgrid", DEFAULTS_SYSTEM_INTEGRATION_CAPEX['microgrid'])),
-                format="%d",
+                value=_safe_float(query_params.get("si_microgrid", DEFAULTS_SYSTEM_INTEGRATION_CAPEX['microgrid']), DEFAULTS_SYSTEM_INTEGRATION_CAPEX['microgrid']),
+                format="%.2f",
                 key="si_microgrid",
                 on_change=update_param,
                 args=("si_microgrid",)
             )
             si_controls = st.number_input(
                 "Controls ($/kW)",
-                value=int(query_params.get("si_controls", DEFAULTS_SYSTEM_INTEGRATION_CAPEX['controls'])),
-                format="%d",
+                value=_safe_float(query_params.get("si_controls", DEFAULTS_SYSTEM_INTEGRATION_CAPEX['controls']), DEFAULTS_SYSTEM_INTEGRATION_CAPEX['controls']),
+                format="%.2f",
                 key="si_controls",
                 on_change=update_param,
                 args=("si_controls",)
@@ -504,8 +520,8 @@ def create_financial_inputs(generator_type: str) -> Dict:
         with col2:
             si_labor = st.number_input(
                 "System Integration Labor ($/kW)",
-                value=int(query_params.get("si_labor", DEFAULTS_SYSTEM_INTEGRATION_CAPEX['labor'])),
-                format="%d",
+                value=_safe_float(query_params.get("si_labor", DEFAULTS_SYSTEM_INTEGRATION_CAPEX['labor']), DEFAULTS_SYSTEM_INTEGRATION_CAPEX['labor']),
+                format="%.2f",
                 key="si_labor",
                 on_change=update_param,
                 args=("si_labor",)
@@ -590,8 +606,8 @@ def create_financial_inputs(generator_type: str) -> Dict:
             )
             solar_om_fixed = st.number_input(
                 "Solar Fixed O&M ($/kW)",
-                value=int(query_params.get("solar_om", DEFAULTS_OM['solar_fixed_dollar_per_kw'])),
-                format="%d",
+                value=_safe_float(query_params.get("solar_om", DEFAULTS_OM['solar_fixed_dollar_per_kw']), DEFAULTS_OM['solar_fixed_dollar_per_kw']),
+                format="%.1f",
                 key="solar_om",
                 on_change=update_param,
                 args=("solar_om",)
