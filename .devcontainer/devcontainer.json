@@ -21,6 +21,7 @@
   "postAttachCommand": {
     "server": "streamlit run app.py --server.enableCORS false --server.enableXsrfProtection false"
   },
+  "postStartCommand": "git config pull.rebase true && git pull --rebase origin main || true",
   "portsAttributes": {
     "8501": {
       "label": "Application",
