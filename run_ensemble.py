@@ -155,9 +155,9 @@ async def main():
     logger.info("LCOE Solar DC Ensemble Simulation")
     logger.info("=" * 80)
     
-    # El Paso, TX coordinates
-    lat = 31.7619
-    long = -106.4850
+    # Odessa, TX
+    lat = 31.227493568540208
+    long = -102.74032647817137
     
     ################### Define test cases ###################
     solar_capacities = list(range(0, 1000, 100))
