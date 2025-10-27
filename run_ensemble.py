@@ -160,9 +160,9 @@ async def main():
     long = -102.74032647817137
     
     ################### Define test cases ###################
-    solar_capacities = list(range(0, 1000, 100))
-    bess_capacities = list(range(0, 1000, 100))
-    generator_capacities = [125]
+    solar_capacities = list(range(0, 1500, 50))
+    bess_capacities = list(range(0, 1500, 50))
+    generator_capacities = list(range(0, 125, 25))
 
     cases = []
     # Generate all permutations
