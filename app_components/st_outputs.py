@@ -376,24 +376,28 @@ def format_proforma(proforma: pd.DataFrame) -> pd.DataFrame:
             'Group': group,
             'Metric': '',
             'Units': '',
-            'Totals/NPV': '',
-            **{str(year): '' for year in proforma.index if year != 'NPV'}
+            'Totals/NPV': None,
+            **{str(year): None for year in proforma.index if year != 'NPV'}
         })
         
         # Add metrics in the group
         for metric in metrics:
             if metric in proforma.columns:
-                # Convert numpy types to Python types
+                # Convert numpy types to Python types and ensure float type
                 npv_value = proforma.loc['NPV', metric]
                 if hasattr(npv_value, 'item'):  # Check if it's a numpy type
-                    npv_value = npv_value.item()  # Convert to Python type
+                    npv_value = float(npv_value.item())  # Convert to Python float
+                else:
+                    npv_value = float(npv_value)
                 
                 year_values = {}
                 for year in proforma.index:
                     if year != 'NPV':
                         val = proforma.loc[year, metric]
                         if hasattr(val, 'item'):
-                            val = val.item()
+                            val = float(val.item())
+                        else:
+                            val = float(val)
                         year_values[str(year)] = val
 
                 rows.append({
@@ -406,6 +410,13 @@ def format_proforma(proforma: pd.DataFrame) -> pd.DataFrame:
     
     # Create DataFrame
     display_df = pd.DataFrame(rows)
+    
+    # Ensure numeric columns have proper dtype (float64 with NaN for None values)
+    # This prevents Arrow serialization issues with mixed types
+    numeric_columns = ['Totals/NPV'] + [str(year) for year in proforma.index if year != 'NPV']
+    for col in numeric_columns:
+        if col in display_df.columns:
+            display_df[col] = pd.to_numeric(display_df[col], errors='coerce')
     
     return display_df
 
