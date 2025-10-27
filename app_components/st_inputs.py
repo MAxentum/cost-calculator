@@ -14,10 +14,9 @@ from core.defaults import (
 )
 import reverse_geocoder as rg
 
-# Amarillo, TX
-MAP_INITIAL_LAT = 35.199
-MAP_INITIAL_LONG = -101.845
-
+# Odessa, TX
+MAP_INITIAL_LAT = 31.227493568540208
+MAP_INITIAL_LONG = -102.74032647817137
 
 def calculate_capex_subtotals(inputs: Dict) -> Dict[str, Dict[str, float]]:
     """Calculate CAPEX subtotals for each system component.
