@@ -6,6 +6,7 @@ import time
 import concurrent.futures as cf
 from functools import lru_cache
 from datetime import datetime
+import logging
 
 from core.datacenter import DataCenter
 from core.powerflow_model import simulate_system, get_solar_ac_dataframe, calculate_energy_mix
@@ -15,6 +16,11 @@ from core.defaults import (
     DEFAULTS_SOFT_COSTS_CAPEX, DEFAULTS_OM, DEFAULTS_FINANCIAL, DEFAULTS_GENERATORS,
     DEFAULTS_DEPRECIATION_SCHEDULE
 )
+from app_components.utils import sanitize_dataframe_for_streamlit, validate_case_inputs
+
+# Configure logging to suppress websocket errors
+logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
+logging.getLogger("tornado.general").setLevel(logging.CRITICAL)
 
 st.set_page_config(page_title="Ensemble CSV", layout="wide")
 
@@ -115,6 +121,21 @@ gen_rate_per_kW    = gensets + gen_bos + gen_labor
 si_rate_per_kW     = si_microgrid + si_controls + si_labor
 soft_rate_pct      = soft_general + soft_epc + soft_design + soft_permit + soft_startup + soft_insurance + soft_taxes
 
+# ---------- validate inputs ----------
+validation_errors = []
+if dc_load <= 0:
+    validation_errors.append("datacenter_load_mw must be > 0")
+if solar_step <= 0:
+    validation_errors.append("solar_step must be > 0")
+if bess_step <= 0:
+    validation_errors.append("bess_step must be > 0")
+if gen_step <= 0:
+    validation_errors.append("gen_step must be > 0")
+
+if validation_errors:
+    st.error("Input validation failed:\n" + "\n".join(f"- {e}" for e in validation_errors))
+    st.stop()
+
 # ---------- build all cases ----------
 solar_vals = list(range(solar_start, solar_stop, solar_step))
 bess_vals  = list(range(bess_start,  bess_stop,  bess_step))
@@ -138,6 +159,11 @@ cases = [
 
 # ---------- per-case compute ----------
 def run_case(case: dict) -> dict:
+    # First validate the case using shared utility
+    validation_error = validate_case_inputs(case)
+    if validation_error:
+        return {**case, "system_spec": None, "lcoe": None, "renewable_percentage": None, "status": f"error: {validation_error}"}
+    
     try:
         solar_df = solar_ac_cached(case["lat"], case["long"])
         pf = simulate_system(
@@ -191,6 +217,14 @@ def run_case(case: dict) -> dict:
             "renewable_percentage": float(mix["renewable_percentage"]),
             "status": "success"
         }
+    except ValueError as e:
+        # Handle specific ValueError exceptions like zero energy
+        error_msg = str(e).lower()
+        if "zero" in error_msg and ("energy" in error_msg or "lifetime" in error_msg):
+            status = "error: zero energy"
+        else:
+            status = f"error: {e}"
+        return {**case, "system_spec": None, "lcoe": None, "renewable_percentage": None, "status": status}
     except Exception as e:
         return {**case, "system_spec": None, "lcoe": None, "renewable_percentage": None, "status": f"error: {e}"}
 

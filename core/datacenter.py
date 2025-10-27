@@ -284,7 +284,17 @@ class DataCenter:
         
         Returns:
             Tuple[float, pd.DataFrame]: LCOE and proforma
+            
+        Raises:
+            ValueError: If lifetime energy is zero or negative (system cannot serve load)
         """
+        # Check for zero lifetime energy before attempting LCOE calculation
+        # Calculate total from filtered simulation data directly (more efficient than full proforma)
+        total_load_served = self.filtered_simulation_data['Load Served (MWh)'].sum()
+        
+        if total_load_served is None or pd.isna(total_load_served) or total_load_served <= 0:
+            raise ValueError(f"Zero or negative lifetime energy: {total_load_served} MWh. Cannot calculate LCOE.")
+        
         # Initial guess: average of bounds
         lcoe_guess = (LCOE_OPT_LOWER_BOUND + LCOE_OPT_UPPER_BOUND) / 2
         
@@ -301,6 +311,10 @@ class DataCenter:
             delta = lcoe_guess * 0.001
             npv2 = self.calculate_pro_forma(lcoe_guess + delta).loc['NPV', 'After-Tax Net Equity Cash Flow']
             derivative = (npv2 - npv) / delta
+            
+            # Guard against zero derivative (shouldn't happen, but be safe)
+            if abs(derivative) < 1e-10:
+                raise ValueError(f"Derivative too small in LCOE calculation: {derivative}")
             
             # Calculate Newton step
             lcoe_new = lcoe_guess - npv / derivative

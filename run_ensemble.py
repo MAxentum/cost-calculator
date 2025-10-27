@@ -13,6 +13,7 @@ import logging
 from core.datacenter import DataCenter
 from core.powerflow_model import simulate_system, get_solar_ac_dataframe, calculate_energy_mix
 from core.pareto_frontier import process_ensemble_data
+from app_components.utils import validate_case_inputs
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,10 +22,25 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Suppress tornado websocket errors
+logging.getLogger("tornado.application").setLevel(logging.CRITICAL)
+logging.getLogger("tornado.general").setLevel(logging.CRITICAL)
+
 MAX_CONCURRENT = 10
 
 def run_lcoe_calculation(case: Dict[str, Any]) -> Dict[str, Any]:
     """Run the calculation synchronously."""
+    # Validate inputs first using shared utility
+    validation_error = validate_case_inputs(case)
+    if validation_error:
+        return {
+            **case,
+            'system_spec': None,
+            'lcoe': None,
+            'renewable_percentage': None,
+            'status': f'error: {validation_error}'
+        }
+    
     try:
         # Get solar generation data
         solar_ac_dataframe = get_solar_ac_dataframe(case['lat'], case['long'])
@@ -65,6 +81,22 @@ def run_lcoe_calculation(case: Dict[str, Any]) -> Dict[str, Any]:
             'status': 'success'
         }
         
+    except ValueError as e:
+        # Handle specific errors like zero energy
+        error_msg = str(e).lower()
+        if "zero" in error_msg and ("energy" in error_msg or "lifetime" in error_msg):
+            status = "error: zero energy"
+            logger.warning(f"Zero energy case: {case}")
+        else:
+            status = f"error: {e}"
+            logger.error(f"ValueError in calculation: {str(e)}")
+        return {
+            **case,
+            'system_spec': None,
+            'lcoe': None,
+            'renewable_percentage': None,
+            'status': status
+        }
     except Exception as e:
         logger.error(f"Error in calculation: {str(e)}")
         return {
