@@ -29,7 +29,7 @@ env/
 *.swo
 
 # Streamlit specific
-.streamlit/
+#.streamlit/
 
 # Jupyter Notebook
 .ipynb_checkpoints
