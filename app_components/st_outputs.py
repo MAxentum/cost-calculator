@@ -383,21 +383,28 @@ def format_proforma(proforma: pd.DataFrame) -> pd.DataFrame:
         # Add metrics in the group
         for metric in metrics:
             if metric in proforma.columns:
-                # Convert numpy types to Python types and ensure float type
-                npv_value = proforma.loc['NPV', metric]
-                if hasattr(npv_value, 'item'):  # Check if it's a numpy type
-                    npv_value = float(npv_value.item())  # Convert to Python float
-                else:
-                    npv_value = float(npv_value)
+                # Convert numpy types to Python types
+                # Using try-except to handle any unexpected non-numeric values gracefully
+                try:
+                    npv_value = proforma.loc['NPV', metric]
+                    if hasattr(npv_value, 'item'):  # Check if it's a numpy type
+                        npv_value = float(npv_value.item())  # Convert to Python float
+                    else:
+                        npv_value = float(npv_value)
+                except (ValueError, TypeError):
+                    npv_value = None  # Use None for values that can't be converted
                 
                 year_values = {}
                 for year in proforma.index:
                     if year != 'NPV':
-                        val = proforma.loc[year, metric]
-                        if hasattr(val, 'item'):
-                            val = float(val.item())
-                        else:
-                            val = float(val)
+                        try:
+                            val = proforma.loc[year, metric]
+                            if hasattr(val, 'item'):
+                                val = float(val.item())
+                            else:
+                                val = float(val)
+                        except (ValueError, TypeError):
+                            val = None  # Use None for values that can't be converted
                         year_values[str(year)] = val
 
                 rows.append({
